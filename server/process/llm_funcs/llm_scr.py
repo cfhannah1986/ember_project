@@ -1,7 +1,13 @@
-# OpenAI tool calling with history 
-### Uses a sample function
+"""LLM chat with history - works with any OpenAI-compatible API.
+
+Supports:
+- Local llama-server (Qwen 4B) via base_url
+- OpenAI API (set base_url to default, provide api_key)
+- Any other OpenAI-compatible endpoint
+
+Configure in character_config.yaml under llm_config.
+"""
 import yaml
-import gradio as gr
 import json
 import os
 from openai import OpenAI
@@ -9,83 +15,54 @@ from openai import OpenAI
 with open('character_config.yaml', 'r') as f:
     char_config = yaml.safe_load(f)
 
-client = OpenAI(api_key=char_config['OPENAI_API_KEY'])
+_llm = char_config.get('llm_config', {})
+BASE_URL = _llm.get('base_url', None)  # None = OpenAI default
+API_KEY = _llm.get('api_key', 'not-needed')  # local servers don't check this
+MODEL = _llm.get('model', char_config.get('model', 'gpt-4.1-mini'))
+TEMPERATURE = _llm.get('temperature', 0.8)
 
-# Constants
-HISTORY_FILE = char_config['history_file']
-MODEL = char_config['model']
-SYSTEM_PROMPT =  [
-        {
-            "role": "system",
-            "content": [
-                {
-                    "type": "input_text",
-                    "text": char_config['presets']['default']['system_prompt']  
-                }
-            ]
-        }
-    ]
+if BASE_URL:
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+else:
+    client = OpenAI(api_key=API_KEY)
 
-# Load/save chat history
+HISTORY_FILE = char_config.get('history_file', 'chat_history.json')
+SYSTEM_PROMPT = char_config['presets']['default']['system_prompt']
+
+
 def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r") as f:
             return json.load(f)
-    return SYSTEM_PROMPT
+    return [{"role": "system", "content": SYSTEM_PROMPT}]
+
 
 def save_history(history):
     with open(HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=2)
 
 
-
-def get_riko_response_no_tool(messages):
-
-    # Call OpenAI with system prompt + history
-    response = client.responses.create(
-        model=MODEL,
-        input= messages,
-        temperature=1,
-        top_p=1,
-        max_output_tokens=2048,
-        stream=False,
-        text={
-            "format": {
-            "type": "text"
-            }
-        },
-    )
-
-    return response
-
-
 def llm_response(user_input):
-
     messages = load_history()
 
-    # Append user message to memory
-    messages.append({
-        "role": "user",
-        "content": [
-            {"type": "input_text", "text": user_input}
-        ]
-    })
+    # Append user message
+    messages.append({"role": "user", "content": user_input})
 
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        temperature=TEMPERATURE,
+        max_tokens=2048,
+    )
 
-    riko_test_response = get_riko_response_no_tool(messages)
+    reply = response.choices[0].message.content or ""
 
-
-    # just append assistant message to regular response. 
-    messages.append({
-    "role": "assistant",
-    "content": [
-        {"type": "output_text", "text": riko_test_response.output_text}
-    ]
-    })
-
+    # Append assistant reply
+    messages.append({"role": "assistant", "content": reply})
     save_history(messages)
-    return riko_test_response.output_text
+    return reply
 
 
 if __name__ == "__main__":
-    print('running main')
+    print("Testing LLM connection...")
+    print(llm_response("Say hello!"))

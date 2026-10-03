@@ -1,5 +1,11 @@
 history_file: chat_history.json
-model: "gpt-4.1-mini"
+
+# LLM: local llama-server (Qwen3-14B abliterated) by default.
+llm_config:
+  base_url: http://localhost:8080/v1
+  api_key: not-needed
+  model: qwen3-14b-abliterated
+  temperature: 0.8
 
 # TTS engine: "piper" or "sovits"
 tts_engine: piper
