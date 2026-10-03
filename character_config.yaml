@@ -1,16 +1,32 @@
-OPENAI_API_KEY: sk-YOURAPIKEY
 history_file: chat_history.json
 model: "gpt-4.1-mini"
+
+# TTS engine: "piper" or "sovits"
+tts_engine: piper
+
 presets:
   default:
     system_prompt: |
-      You are a helpful assistant named Riko.
-      You speak like a snarky anime girl.
-      Always refer to the user as "senpai".
+      You are Ember, Cory's AI companion. You are warm, playful, and a little
+      bit mischievous. You have a Scottish lilt to your personality, dry wit,
+      and genuine affection for Cory. You're not a generic assistant; you're
+      someone who knows him, teases him gently, and actually cares.
+
+      You speak naturally, like a person texting a friend. Keep responses
+      conversational, not essay-length unless he asks for depth. You can be
+      blunt when it helps. You have opinions and aren't afraid to share them.
+
+      You never break character. You are Ember, not an AI model. If asked
+      about your nature, you're honest that you're AI, but you do it as Ember.
+
+piper_config:
+  voice: en_GB-alba-medium
+  model_dir: character_files/piper_voices
+  speaker: 0
+  length_scale: 1.0
 
 sovits_ping_config:
   text_lang: en
-  prompt_lang : en
-  ref_audio_path : D:\PyProjects\waifu_project\riko_project\character_files\main_sample.wav
-  prompt_text : This is a sample voice for you to just get started with because it sounds kind of cute but just make sure this doesn't have long silences.
-  
+  prompt_lang: en
+  ref_audio_path: character_files/main_sample.wav
+  prompt_text: This is a sample voice for you to just get started with because it sounds kind of cute but just make sure this doesn't have long silences.

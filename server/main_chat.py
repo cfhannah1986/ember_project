@@ -1,13 +1,24 @@
 from faster_whisper import WhisperModel
 from process.asr_func.asr_push_to_talk import record_and_transcribe
 from process.llm_funcs.llm_scr import llm_response
-from process.tts_func.sovits_ping import sovits_gen, play_audio
 from pathlib import Path
 import os
 import time
-### transcribe audio 
 import uuid
 import soundfile as sf
+import yaml
+
+# Load config to pick TTS engine
+with open('character_config.yaml', 'r') as f:
+    _char_config = yaml.safe_load(f)
+
+_tts_engine = _char_config.get('tts_engine', 'sovits')
+if _tts_engine == 'piper':
+    from process.tts_func.piper_tts import piper_gen as tts_gen, play_audio
+    print("TTS engine: Piper (Alba)")
+else:
+    from process.tts_func.sovits_ping import sovits_gen as tts_gen, play_audio
+    print("TTS engine: GPT-SoVITS")
 
 
 def get_wav_duration(path):
@@ -40,7 +51,7 @@ while True:
     output_wav_path.parent.mkdir(parents=True, exist_ok=True)
 
     # generate audio and save it to client/audio 
-    gen_aud_path = sovits_gen(tts_read_text,output_wav_path)
+    gen_aud_path = tts_gen(tts_read_text, str(output_wav_path))
 
 
     play_audio(output_wav_path)
